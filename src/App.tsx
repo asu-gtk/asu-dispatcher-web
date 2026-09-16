@@ -11,12 +11,15 @@ import {
   Fuel,
   TrendingDown,
   CheckCircle2,
-  AlertCircle,
+  AlertTriangle,
   Radio,
   Clock,
   Shield,
-  Search,
-  Download
+  Sparkles,
+  Construction,
+  AlertCircle,
+  TrendingUp,
+  BrainCircuit
 } from 'lucide-react';
 
 interface FleetItem {
@@ -32,7 +35,7 @@ interface FleetItem {
 }
 
 const mockFleet: FleetItem[] = [
-  { code: 'TRUCK-101', model: 'БелАЗ-75131 (130т)', driver: 'Доржиев Э.Д.', status: 'В движении с рудой', fuel: 420, payload: 131.2, speed: 28.5, statusColor: 'bg-emerald-500', bench: 'Горизонт +1620' },
+  { code: 'TRUCK-101', model: 'БелАЗ-75131 (130т)', driver: 'Доржиев Э.Д.', status: 'В движении с рудой', fuel: 75, payload: 131.2, speed: 28.5, statusColor: 'bg-amber-500', bench: 'Горизонт +1620' },
   { code: 'TRUCK-104', model: 'БелАЗ-75131 (130т)', driver: 'Петров Б.В.', status: 'Возврат порожним', fuel: 395, payload: 0.0, speed: 34.0, statusColor: 'bg-cyan-500', bench: 'Горизонт +1640' },
   { code: 'TRUCK-108', model: 'CAT 777 (100т)', driver: 'Лиханов Д.А.', status: 'Под погрузкой', fuel: 310, payload: 98.4, speed: 0.0, statusColor: 'bg-amber-500', bench: 'Горизонт +1620' },
   { code: 'EXC-02', model: 'ЭКГ-5А (5.0 м³)', driver: 'Сидоров Д.А.', status: 'Погрузка в забое', fuel: 0, payload: 9.0, speed: 0.0, statusColor: 'bg-amber-500', bench: 'Забой #2 (+1620)' },
@@ -209,7 +212,7 @@ export default function App() {
 
         {/* Рабочая сетка диспетчера */}
         <div className="flex-1 p-4 grid grid-cols-12 gap-4 min-h-0">
-          {/* Левая 3D-сцена и живая телеметрия */}
+          {/* Левая 3D-сцена и журнал телеметрии */}
           <div className="col-span-8 flex flex-col gap-4 min-h-0">
             <div className="flex-1 min-h-0">
               <OpenPit3DScene />
@@ -227,28 +230,65 @@ export default function App() {
                 <span className="text-xs font-mono text-emerald-400 font-bold">2.5 Hz RT-STREAM</span>
               </div>
               <div className="flex-1 overflow-auto font-mono text-xs space-y-1.5 text-slate-300 pr-1">
+                <div className="text-amber-400 flex items-center justify-between font-bold">
+                  <span>[03:15:10] AI PREDICT: Борт #101 остаток ГСМ 75л &rarr; Запланирован заезд на АТЗ-04 (+1640м)</span>
+                  <span className="text-amber-500 font-normal">AUTO-ROUTE</span>
+                </div>
                 <div className="text-emerald-400 flex items-center justify-between">
-                  <span>[03:14:22] UDP: TRUCK-101 (Lat 42.8746, Lon 74.5698) V=28.5 km/h, Груз=131.2т, Топливо=420л</span>
+                  <span>[03:15:08] UDP: TRUCK-101 (Lat 42.8746, Lon 74.5698) V=28.5 km/h, Груз=131.2т, Топливо=75л</span>
                   <span className="text-slate-500">24ms</span>
                 </div>
                 <div className="text-cyan-400 flex items-center justify-between">
-                  <span>[03:14:21] UDP: TRUCK-104 (Lat 42.8710, Lon 74.5620) V=34.0 km/h, Порожний, Топливо=395л</span>
+                  <span>[03:15:05] UDP: TRUCK-104 (Lat 42.8710, Lon 74.5620) V=34.0 km/h, Порожний, Топливо=395л</span>
                   <span className="text-slate-500">22ms</span>
                 </div>
-                <div className="text-amber-400 flex items-center justify-between">
-                  <span>[03:14:19] EVENT: EXC-02 Завершена погрузка борта TRUCK-108 (98.4т) &rarr; Назначен Отвал-Восток</span>
-                  <span className="text-slate-500">80ms</span>
-                </div>
                 <div className="text-slate-400 flex items-center justify-between">
-                  <span>[03:14:15] SIMPLEX: Целевая функция минимизации пересчитана. Удельный расход снижен на 4.2%</span>
-                  <span className="text-slate-500">110ms</span>
+                  <span>[03:15:01] EVENT: EXC-02 Завершена погрузка борта TRUCK-108 (98.4т) &rarr; Назначен Отвал-Восток</span>
+                  <span className="text-slate-500">80ms</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Правая колонка: Парк на линии и модуль Симплекса */}
+          {/* Правая колонка: Предиктивный радар рисков & Парк на линии */}
           <div className="col-span-4 flex flex-col gap-4 min-h-0">
+            {/* Блок предиктивной аналитики и прогнозирования инцидентов */}
+            <div className="bg-[#111620] border-2 border-amber-500/40 rounded-3xl p-4 flex flex-col gap-2.5 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BrainCircuit className="w-4 h-4 text-amber-400" />
+                  <h3 className="text-xs font-black text-slate-100 uppercase tracking-wider">
+                    Предиктивный радар рисков
+                  </h3>
+                </div>
+                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full text-[10px] font-mono font-bold">
+                  2 события
+                </span>
+              </div>
+
+              {/* Событие 1: Прогноз топлива */}
+              <div className="bg-[#161d29] p-2.5 rounded-2xl border border-[#273449] flex items-start gap-2.5">
+                <Fuel className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <div className="font-bold text-slate-200">Борт #101: Остаток ГСМ 75 л (~45 мин)</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    Прогноз: остановка через 2 рейса. Маршрут автоматически перестроен через АТЗ-04.
+                  </div>
+                </div>
+              </div>
+
+              {/* Событие 2: Очередь экскаватора */}
+              <div className="bg-[#161d29] p-2.5 rounded-2xl border border-[#273449] flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <div className="font-bold text-slate-200">Забой #2: Риск затора (3 самосвала)</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    Симплекс перенаправил борт #108 на свободный забой #7 (Hitachi EX3600).
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Реестр парка на линии */}
             <div className="flex-1 bg-[#111620] border border-[#1d2636] rounded-3xl p-4 flex flex-col min-h-0 shadow-md">
               <div className="flex items-center justify-between mb-3">
@@ -259,11 +299,11 @@ export default function App() {
                 <span className="text-xs font-mono text-slate-400">5 активных ед.</span>
               </div>
 
-              <div className="flex-1 overflow-auto space-y-2.5 pr-1">
+              <div className="flex-1 overflow-auto space-y-2 pr-1">
                 {mockFleet.map((v) => (
                   <div
                     key={v.code}
-                    className="p-3 bg-[#151b24] border border-[#222d3d] rounded-2xl flex items-center justify-between hover:border-amber-500/40 transition"
+                    className="p-2.5 bg-[#151b24] border border-[#222d3d] rounded-2xl flex items-center justify-between hover:border-amber-500/40 transition"
                   >
                     <div>
                       <div className="flex items-center gap-2">
@@ -275,7 +315,9 @@ export default function App() {
                     </div>
                     <div className="text-right font-mono">
                       <div className="text-xs font-bold text-amber-400">{v.payload > 0 ? `${v.payload} т` : 'Порожний'}</div>
-                      <div className="text-[11px] text-slate-400">{v.fuel > 0 ? `${v.fuel} л` : '-'}</div>
+                      <div className={`text-[11px] font-bold ${v.fuel <= 80 ? 'text-amber-400' : 'text-slate-400'}`}>
+                        {v.fuel > 0 ? `${v.fuel} л` : '-'}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -283,25 +325,20 @@ export default function App() {
             </div>
 
             {/* Карточка Симплекс-распределения */}
-            <div className="h-60 bg-[#111620] border border-[#1d2636] rounded-3xl p-4 flex flex-col justify-between shadow-md">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-cyan-400" />
-                    <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Симплекс-Оптимизация</h3>
-                  </div>
-                  {optSuccess && (
-                    <span className="text-xs text-emerald-400 flex items-center gap-1 font-mono font-bold">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Оптимум найден
-                    </span>
-                  )}
+            <div className="h-44 bg-[#111620] border border-[#1d2636] rounded-3xl p-4 flex flex-col justify-between shadow-md">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-cyan-400" />
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Симплекс-Оптимизация</h3>
                 </div>
-                <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                  Математическая модель минимизации себестоимости 1 тонно-километра через алгоритм линейного программирования Apache Commons Math.
-                </p>
+                {optSuccess && (
+                  <span className="text-xs text-emerald-400 flex items-center gap-1 font-mono font-bold">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Оптимум
+                  </span>
+                )}
               </div>
 
-              <div className="bg-[#151b24] p-3 rounded-2xl border border-[#222d3d] text-xs font-mono space-y-1.5">
+              <div className="bg-[#151b24] p-2.5 rounded-2xl border border-[#222d3d] text-xs font-mono space-y-1">
                 <div className="flex justify-between text-slate-300">
                   <span>ЭКГ-5А #2 (L=3.2 км)</span>
                   <span className="text-amber-400 font-bold">2 БелАЗ-75131</span>
@@ -310,8 +347,8 @@ export default function App() {
                   <span>Hitachi EX3600 (L=2.4 км)</span>
                   <span className="text-amber-400 font-bold">3 CAT 777</span>
                 </div>
-                <div className="flex justify-between text-emerald-400 font-bold pt-1.5 border-t border-[#222d3d]">
-                  <span>Экономия смены:</span>
+                <div className="flex justify-between text-emerald-400 font-bold pt-1 border-t border-[#222d3d]">
+                  <span>Экономия:</span>
                   <span>-84,200 руб</span>
                 </div>
               </div>
