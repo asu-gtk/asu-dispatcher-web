@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { OpenPit3DScene } from './components/OpenPit3DScene';
+import { Pit2DOverviewMap } from './components/Pit2DOverviewMap';
+import { BroadcastModal } from './components/BroadcastModal';
 import {
   Truck,
   Activity,
@@ -19,7 +21,9 @@ import {
   Construction,
   AlertCircle,
   TrendingUp,
-  BrainCircuit
+  BrainCircuit,
+  Send,
+  Map
 } from 'lucide-react';
 
 interface FleetItem {
@@ -35,7 +39,7 @@ interface FleetItem {
 }
 
 const mockFleet: FleetItem[] = [
-  { code: 'TRUCK-101', model: 'БелАЗ-75131 (130т)', driver: 'Доржиев Э.Д.', status: 'В движении с рудой', fuel: 75, payload: 131.2, speed: 28.5, statusColor: 'bg-amber-500', bench: 'Горизонт +1620' },
+  { code: 'TRUCK-101', model: 'БелАЗ-75131 (130т)', driver: 'Доржиев Э.Д.', status: 'В движении с рудой', fuel: 75, payload: 131.2, speed: 28.5, statusColor: 'bg-emerald-500', bench: 'Горизонт +1620' },
   { code: 'TRUCK-104', model: 'БелАЗ-75131 (130т)', driver: 'Петров Б.В.', status: 'Возврат порожним', fuel: 395, payload: 0.0, speed: 34.0, statusColor: 'bg-blue-500', bench: 'Горизонт +1640' },
   { code: 'TRUCK-108', model: 'CAT 777 (100т)', driver: 'Лиханов Д.А.', status: 'Под погрузкой', fuel: 310, payload: 98.4, speed: 0.0, statusColor: 'bg-amber-500', bench: 'Горизонт +1620' },
   { code: 'EXC-02', model: 'ЭКГ-5А (5.0 м³)', driver: 'Сидоров Д.А.', status: 'Погрузка в забое', fuel: 0, payload: 9.0, speed: 0.0, statusColor: 'bg-amber-500', bench: 'Забой #2 (+1620)' },
@@ -43,9 +47,12 @@ const mockFleet: FleetItem[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'3d' | 'optimizer' | 'fleet' | 'reports'>('3d');
+  const [activeTab, setActiveTab] = useState<'map' | 'optimizer' | 'fleet' | 'reports'>('map');
+  const [mapMode, setMapMode] = useState<'3d' | '2d'>('3d');
   const [optimizing, setOptimizing] = useState(false);
   const [optSuccess, setOptSuccess] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const handleRunOptimizer = () => {
     setOptimizing(true);
@@ -54,6 +61,11 @@ export default function App() {
       setOptSuccess(true);
       setTimeout(() => setOptSuccess(false), 4000);
     }, 1200);
+  };
+
+  const handleSendBroadcast = (target: string, type: string, message: string) => {
+    setToast(`Распоряжение [${type.toUpperCase()}] успешно отправлено на ${target}`);
+    setTimeout(() => setToast(null), 3500);
   };
 
   return (
@@ -75,15 +87,15 @@ export default function App() {
           {/* Меню навигации */}
           <nav className="p-3 space-y-1">
             <button
-              onClick={() => setActiveTab('3d')}
+              onClick={() => setActiveTab('map')}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
-                activeTab === '3d'
+                activeTab === 'map'
                   ? 'bg-blue-50 text-blue-800 border border-blue-200 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               <Activity className="w-4 h-4 text-blue-600" />
-              3D Карьер & Мониторинг
+              Карьер & Мониторинг
             </button>
 
             <button
@@ -189,6 +201,15 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Кнопка отправки распоряжения на борт */}
+            <button
+              onClick={() => setBroadcastOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 rounded-xl text-xs font-bold transition shadow-sm"
+            >
+              <Send className="w-4 h-4 text-blue-600" />
+              <span>Отправить распоряжение</span>
+            </button>
+
             <a
               href="http://localhost:8080/api/v1/reports/shift/xlsx"
               target="_blank"
@@ -210,12 +231,39 @@ export default function App() {
           </div>
         </header>
 
+        {/* Уведомление об отправке */}
+        {toast && (
+          <div className="bg-blue-600 text-white px-6 py-2 text-xs font-bold text-center shadow-md animate-fade-in">
+            {toast}
+          </div>
+        )}
+
         {/* Рабочая сетка диспетчера */}
         <div className="flex-1 p-3.5 grid grid-cols-12 gap-3.5 min-h-0">
-          {/* Левая 3D-сцена и журнал телеметрии */}
+          {/* Левая интерактивная карта (3D / 2D переключатель) и журнал телеметрии */}
           <div className="col-span-8 flex flex-col gap-3 min-h-0">
-            <div className="flex-1 min-h-0">
-              <OpenPit3DScene />
+            {/* Панель переключения 3D цифровой двойник / 2D схема трафика */}
+            <div className="flex-1 min-h-0 relative">
+              <div className="absolute top-3 right-3 z-20 flex bg-white p-1 rounded-xl border border-slate-200 shadow-md">
+                <button
+                  onClick={() => setMapMode('3d')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                    mapMode === '3d' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  3D Двойник карьера
+                </button>
+                <button
+                  onClick={() => setMapMode('2d')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                    mapMode === '2d' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  2D Карта трафика парка
+                </button>
+              </div>
+
+              {mapMode === '3d' ? <OpenPit3DScene /> : <Pit2DOverviewMap fleet={mockFleet} />}
             </div>
 
             {/* Консоль телеметрии самосвалов в реальном времени */}
@@ -356,6 +404,13 @@ export default function App() {
           </div>
         </div>
       </main>
+
+      {/* Модальное окно рассылки распоряжений */}
+      <BroadcastModal
+        isOpen={broadcastOpen}
+        onClose={() => setBroadcastOpen(false)}
+        onSend={handleSendBroadcast}
+      />
     </div>
   );
 }
